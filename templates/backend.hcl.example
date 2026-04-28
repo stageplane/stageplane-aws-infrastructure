@@ -1,0 +1,11 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+bucket = "replace-me-terraform-state"
+key    = "stage/example.tfstate"
+region = "us-west-2"
+dynamodb_table = "replace-me-terraform-locks"
+encrypt = true

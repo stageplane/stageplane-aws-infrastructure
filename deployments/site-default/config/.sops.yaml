@@ -1,0 +1,33 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# -----------------------------------------------------------------------------
+# Intent
+# -----------------------------------------------------------------------------
+# Defines the site-scoped SOPS policy for files under this deployment's config
+# tree. This local policy mirrors the repository root standard while allowing a
+# site to bind encryption to its own AWS KMS alias or key ARN without changing
+# unrelated sites.
+#
+# Design notes:
+# - Keep secret-bearing files under deployments/<site>/config/ so they match the
+#   repository encryption policy and remain easy to audit.
+# - The Argo CD durable admin credential must be stored only as a SOPS-encrypted
+#   YAML file under config/argocd/.
+# - This file may override the example KMS alias shown here with a site-owned
+#   production alias before first use.
+# -----------------------------------------------------------------------------
+creation_rules:
+  - path_regex: deployments/site-default/config/.*\.(enc\.yaml|secret\.yaml|secrets\.yaml)$
+    kms: arn:aws:kms:us-west-2:111122223333:alias/stageplane-sops-site-default
+    encrypted_regex: '^(data|stringData|secrets|credentials)$'
+
+  - path_regex: deployments/site-default/config/.*\.(enc\.json|enc\.tfvars\.json)$
+    kms: arn:aws:kms:us-west-2:111122223333:alias/stageplane-sops-site-default
+
+stores:
+  yaml:
+    indent: 2

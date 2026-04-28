@@ -1,0 +1,116 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# Example YAML settings file rendered into tfvars JSON at runtime.
+platform_name: platform
+environment: dev
+aws_region: us-west-2
+aws_profile: default
+company_name: example
+cluster_name: platform-dev-us-west-2-eks
+hosted_zone_name: dev.example.internal
+vpc_cidr: 10.0.0.0/16
+availability_zones:
+  - us-west-2a
+  - us-west-2b
+  - us-west-2c
+private_subnet_cidrs:
+  - 10.0.0.0/20
+  - 10.0.16.0/20
+  - 10.0.32.0/20
+public_subnet_cidrs:
+  - 10.0.128.0/24
+  - 10.0.129.0/24
+  - 10.0.130.0/24
+cluster_version: "1.33"
+# -----------------------------------------------------------------------------
+# StagePlane compute orchestration model example.
+# -----------------------------------------------------------------------------
+# This is the only supported worker-capacity contract in the pre-GA baseline.
+# all EKS, Fargate, and optional Karpenter capacity is declared in one place.
+compute:
+  # Baseline EKS/Fargate capacity. At least one group is required.
+  node_groups:
+    - name: system
+      role: system
+      capacity:
+        type: on_demand
+        backend: managed_node_group
+      instance:
+        types:
+          - m7i.large
+      scaling:
+        desired: 3
+        min: 3
+        max: 6
+
+    - name: serverless-system
+      role: system
+      capacity:
+        type: fargate
+        backend: fargate_profile
+      fargate:
+        selectors:
+          - namespace: kube-system
+          - namespace: default
+
+    - name: gpu
+      role: gpu
+      capacity:
+        type: mixed
+        mixed:
+          ondemand:
+            base: 1
+          spot:
+            enabled: true
+            max_price: "12.50"
+            allocation_strategy: price-capacity-optimized
+            fallback_to_ondemand: true
+      instance:
+        types:
+          - p5.48xlarge
+          - p4d.24xlarge
+      scaling:
+        min: 0
+        max: 8
+
+  # Optional elastic capacity plane. When disabled or omitted, StagePlane still
+  # deploys the deterministic baseline from node_groups.
+  karpenter:
+    enabled: true
+    namespace: karpenter
+    chart_version: "1.8.1"
+    node_pools:
+      - name: gpu-spot
+        role: gpu
+        capacity:
+          type: spot
+        instance:
+          types:
+            - p5.48xlarge
+            - p4d.24xlarge
+        limits:
+          cpu: "1000"
+
+argocd_enabled: true
+argocd_namespace: argocd
+argocd_chart_version: "7.7.16"
+argocd_bootstrap_enabled: false
+# Example remote or local kustomize source for the base Argo CD installation.
+# Example remote form:
+#   github.com/mycompany/aws-gitops-infrastructure//environments/dev/deployments/argocd?ref=main
+# Example local form:
+#   deployments/site-default/gitops/argocd/base
+argocd_base_kustomize: "github.com/mycompany/aws-gitops-infrastructure//environments/dev/deployments/argocd?ref=main"
+# Example follow-on bootstrap source applied after Argo CD becomes reachable.
+# This typically contains root applications, projects, repositories, and policy.
+# Example remote form:
+#   github.com/mycompany/aws-gitops-infrastructure//environments/dev/bootstrap/argocd?ref=main
+# Example local form:
+#   deployments/site-default/gitops/argocd/bootstrap
+argocd_bootstrap_kustomize: "github.com/mycompany/aws-gitops-infrastructure//environments/dev/bootstrap/argocd?ref=main"
+argocd_admin_password: ""
+argocd_admin_password_sops_file: deployments/site-default/config/argocd/.secret.enc.yaml

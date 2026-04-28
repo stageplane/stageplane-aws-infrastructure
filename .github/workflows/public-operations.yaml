@@ -1,0 +1,177 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+# -----------------------------------------------------------------------------
+# Intent
+# -----------------------------------------------------------------------------
+# Provides a controlled manual entrypoint for public-repo operator commands.
+# This workflow is intended for plan/deploy/destroy/validate and other runtime
+# operations once credentials, kube access, and an issued stagectl license
+# are supplied through GitHub secrets and repository variables.
+# -----------------------------------------------------------------------------
+
+name: public-operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: stagectl operation to execute.
+        required: true
+        type: choice
+        options:
+          - list-sites
+          - describe-site
+          - status
+          - output
+          - lint
+          - preflight
+          - validate
+          - plan
+          - deploy
+          - destroy
+          - bootstrap-gitops
+          - clone-site
+      site_name:
+        description: Target site name for site-scoped commands.
+        required: false
+        default: site-default
+        type: string
+      from_site:
+        description: Source site used by clone-site.
+        required: false
+        default: site-default
+        type: string
+      verbosity:
+        description: stagectl output verbosity.
+        required: false
+        default: standard
+        type: choice
+        options:
+          - standard
+          - text
+          - json
+      stagectl_download_url:
+        description: Optional release asset URL for stagectl when bin/stagectl is not already present.
+        required: false
+        type: string
+      iac_runtime:
+        description: IaC runtime used for the operation.
+        required: false
+        default: terraform
+        type: choice
+        options:
+          - terraform
+          - opentofu
+
+permissions:
+  contents: read
+
+jobs:
+  run-operation:
+    runs-on: ubuntu-latest
+    environment: public-operations
+    env:
+      SITE_NAME: ${{ inputs.site_name }}
+      FROM_SITE: ${{ inputs.from_site }}
+      STAGECTL_VERBOSITY: ${{ inputs.verbosity }}
+      STAGECTL_DOWNLOAD_URL: ${{ inputs.stagectl_download_url || vars.STAGECTL_DOWNLOAD_URL }}
+      STAGECTL: ./bin/stagectl
+      STAGECTL_LICENSE_FILE: ${{ github.workspace }}/.github/runtime/stageplane-license.json
+      STAGECTL_IAC_RUNTIME: ${{ inputs.iac_runtime || 'terraform' }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+      AWS_DEFAULT_REGION: ${{ vars.AWS_REGION || 'us-west-2' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        if: ${{ env.STAGECTL_IAC_RUNTIME == 'terraform' }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Setup OpenTofu
+        if: ${{ env.STAGECTL_IAC_RUNTIME == 'opentofu' }}
+        uses: opentofu/setup-opentofu@v2
+
+      - name: Setup supporting CLI tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip jq
+          KUBECTL_VERSION="v1.33.0"
+          curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o kubectl
+          sudo install -m 0755 kubectl /usr/local/bin/kubectl
+          ARGOCD_VERSION="v2.14.7"
+          curl -fsSL "https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64" -o argocd
+          sudo install -m 0755 argocd /usr/local/bin/argocd
+          SOPS_VERSION="3.9.4"
+          curl -fsSL "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64" -o sops
+          sudo install -m 0755 sops /usr/local/bin/sops
+
+      - name: Install stagectl binary
+        run: bash ./.github/scripts/install-stagectl.sh
+
+      - name: Materialize issued license file when available
+        env:
+          STAGECTL_LICENSE_JSON_B64: ${{ secrets.STAGECTL_LICENSE_JSON_B64 }}
+        run: |
+          mkdir -p .github/runtime
+          if [[ -n "${STAGECTL_LICENSE_JSON_B64:-}" ]]; then
+            printf '%s' "$STAGECTL_LICENSE_JSON_B64" | base64 -d > "$STAGECTL_LICENSE_FILE"
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-west-2' }}
+
+      - name: Execute selected operation
+        run: |
+          case "${{ inputs.operation }}" in
+            list-sites)
+              make list-sites
+              ;;
+            describe-site)
+              make describe-site SITE_NAME="$SITE_NAME"
+              ;;
+            status)
+              make status SITE_NAME="$SITE_NAME"
+              ;;
+            output)
+              make output SITE_NAME="$SITE_NAME"
+              ;;
+            lint)
+              make lint SITE_NAME="$SITE_NAME"
+              ;;
+            preflight)
+              make preflight SITE_NAME="$SITE_NAME"
+              ;;
+            validate)
+              make validate SITE_NAME="$SITE_NAME"
+              ;;
+            plan)
+              make plan SITE_NAME="$SITE_NAME"
+              ;;
+            deploy)
+              make deploy SITE_NAME="$SITE_NAME"
+              ;;
+            destroy)
+              make destroy SITE_NAME="$SITE_NAME"
+              ;;
+            bootstrap-gitops)
+              make bootstrap-gitops SITE_NAME="$SITE_NAME"
+              ;;
+            clone-site)
+              make clone-site SITE_NAME="$SITE_NAME" FROM_SITE="$FROM_SITE"
+              ;;
+            *)
+              echo "Unsupported operation: ${{ inputs.operation }}" >&2
+              exit 1
+              ;;
+          esac

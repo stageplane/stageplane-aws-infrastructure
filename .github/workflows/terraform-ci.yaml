@@ -1,0 +1,61 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+name: terraform-ci
+
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        iac_runtime: [terraform, opentofu]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        if: ${{ matrix.iac_runtime == 'terraform' }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Setup OpenTofu
+        if: ${{ matrix.iac_runtime == 'opentofu' }}
+        uses: opentofu/setup-opentofu@v2
+
+      - name: Check runtime formatting
+        run: |
+          if [[ "${{ matrix.iac_runtime }}" == "terraform" ]]; then
+            terraform fmt -check -recursive
+          else
+            tofu fmt -check -recursive
+          fi
+
+      - name: Run native runtime tests
+        run: |
+          set -eu
+          module_list_file="terraform-modules/tests/module-test-dirs.txt"
+          if [[ ! -f "$module_list_file" ]]; then
+            echo "Missing module test allowlist at $module_list_file" >&2
+            exit 1
+          fi
+          while IFS= read -r test_dir; do
+            [[ -z "$test_dir" ]] && continue
+            module_dir=$(dirname "$test_dir")
+            echo "Running ${{ matrix.iac_runtime }} test in $module_dir"
+            (
+              cd "$module_dir"
+              if [[ "${{ matrix.iac_runtime }}" == "terraform" ]]; then
+                terraform init -backend=false -input=false
+                terraform test
+              else
+                tofu init -backend=false -input=false
+                tofu test
+              fi
+            )
+          done < "$module_list_file"

@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# -----------------------------------------------------------------------------
+# Intent
+# -----------------------------------------------------------------------------
+# Defines the repository standard for encrypting operationally sensitive files
+# with SOPS. This configuration keeps human-authored site configuration readable
+# while ensuring any future secret-bearing files are encrypted consistently.
+#
+# Design notes:
+# - Plaintext secrets must not be committed into site YAML or Terraform files.
+# - If a deployment requires secret material in-repo, it must be placed in an
+#   explicitly encrypted file governed by this policy.
+# - AWS KMS is the preferred production key provider for this repository.
+# -----------------------------------------------------------------------------
+creation_rules:
+  - path_regex: deployments/.*/config/.*\.(enc\.yaml|secret\.yaml|secrets\.yaml)$
+    kms: arn:aws:kms:us-west-2:111122223333:alias/stageplane-sops
+    encrypted_regex: '^(data|stringData|secrets|credentials)$'
+
+  - path_regex: .*(\.enc\.json|\.enc\.tfvars\.json)$
+    kms: arn:aws:kms:us-west-2:111122223333:alias/stageplane-sops
+
+stores:
+  yaml:
+    indent: 2

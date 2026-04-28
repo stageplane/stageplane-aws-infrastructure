@@ -1,0 +1,14 @@
+terraform-modules/landingzone-global-settings/tests
+terraform-modules/landingzone-aws-vpc/tests
+terraform-modules/landingzone-aws-route53/tests
+terraform-modules/landingzone-aws-eks-cluster-addons/tests
+terraform-modules/landingzone-aws-karpenter/tests
+terraform-modules/landingzone-aws-argocd/tests
+terraform-modules/aws-modules/aws-vpc/tests
+terraform-modules/aws-modules/aws-route53/tests
+terraform-modules/aws-modules/aws-argocd/tests
+terraform-modules/aws-modules/aws-eks-cluster-addons/tests
+terraform-modules/aws-modules/aws-karpenter/tests
+terraform-modules/aws-modules/aws-eks-cluster-addons/modules/core-addons/tests
+terraform-modules/aws-modules/aws-eks-cluster/modules/control-plane-access/tests
+terraform-modules/aws-modules/aws-eks-cluster/modules/pod-identity/tests

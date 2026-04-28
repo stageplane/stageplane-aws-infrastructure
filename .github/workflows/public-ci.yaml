@@ -1,0 +1,113 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+# -----------------------------------------------------------------------------
+# Intent
+# -----------------------------------------------------------------------------
+# Executes the public-repository quality gates that are safe to run on each push
+# and pull request. This workflow validates formatting, installs the released
+# stagectl binary, and runs the native offline Terraform contract tests.
+# -----------------------------------------------------------------------------
+
+name: public-ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - 'release/**'
+      - 'feature/**'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      stagectl_download_url:
+        description: Optional release asset URL for stagectl when bin/stagectl is not already present.
+        required: false
+        type: string
+      site_name:
+        description: Site name used for the Terraform contract test sweep.
+        required: false
+        default: site-default
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        iac_runtime: [terraform, opentofu]
+    env:
+      SITE_NAME: ${{ inputs.site_name || 'site-default' }}
+      STAGECTL_DOWNLOAD_URL: ${{ inputs.stagectl_download_url || vars.STAGECTL_DOWNLOAD_URL }}
+      STAGECTL: ./bin/stagectl
+      STAGECTL_IAC_RUNTIME: ${{ matrix.iac_runtime }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        if: ${{ matrix.iac_runtime == 'terraform' }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Setup OpenTofu
+        if: ${{ matrix.iac_runtime == 'opentofu' }}
+        uses: opentofu/setup-opentofu@v2
+
+      - name: Setup supporting CLI tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          SOPS_VERSION="3.9.4"
+          curl -fsSL "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64" -o sops
+          sudo install -m 0755 sops /usr/local/bin/sops
+
+      - name: Install stagectl binary
+        run: bash ./.github/scripts/install-stagectl.sh
+
+      
+      - name: Check runtime formatting
+        run: |
+          if [[ "$STAGECTL_IAC_RUNTIME" == "terraform" ]]; then
+            terraform fmt -check -recursive
+          else
+            tofu fmt -check -recursive
+          fi
+
+      - name: Run public repository contract tests
+        run: make test SITE_NAME="$SITE_NAME" STAGECTL_IAC_RUNTIME="$STAGECTL_IAC_RUNTIME"
+
+  package-public-release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove transient Terraform state and lock artifacts
+        run: |
+          find . -type d \( -name .terraform -o -name .terragrunt-cache \) -prune -exec rm -rf {} +
+          find . -type f \( -name '.terraform.lock.hcl' -o -name 'terraform.tfstate' -o -name 'terraform.tfstate.*' \) -delete
+
+      - name: Build release zip
+        run: |
+          ts="$(date -u +%Y%m%d%H%M%S)"
+          artifact="stageplane-aws-infrastructure-${ts}.zip"
+          zip -qr "$artifact" .
+          echo "artifact_name=$artifact" >> "$GITHUB_ENV"
+
+      - name: Upload release candidate zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.artifact_name }}
+          path: ${{ env.artifact_name }}

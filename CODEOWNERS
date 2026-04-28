@@ -1,0 +1,13 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# Repository-specific ownership mapping.
+* @vladimir-j-fonseca
+/docs/ @vladimir-j-fonseca
+/deployments/ @vladimir-j-fonseca
+/stagectl/ @vladimir-j-fonseca
+/terraform-modules/ @vladimir-j-fonseca
+/scripts/ @vladimir-j-fonseca

@@ -1,0 +1,27 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# NOTICE
+
+**Package:** StagePlane AWS public baseline
+
+**Author and repository owner:** Vladimir Fonseca
+
+This repository package, including its multi-site deployment model, stagectl orchestration design, site-scoped configuration pattern, staging model, documentation, and integration structure, is the authored work product of Vladimir Fonseca.
+
+Third-party modules, providers, charts, and managed services referenced or composed by this package remain the property of their respective owners. Their inclusion does not transfer ownership.
+
+This package baseline is the authoritative source package for this repository unless explicitly superseded by Vladimir Fonseca.
+
+**Project website:** https://stageplane.io
+
+**GitHub organization:** https://github.com/stageplane
+
+**Project/admin contact:** vladimir.fonseca@stageplane.io
+
+**General contact:** hello@stageplane.io
+
+**Security contact:** security@stageplane.io

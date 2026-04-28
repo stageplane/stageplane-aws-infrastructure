@@ -1,0 +1,162 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+
+# ----------------------------------------------------------------------------
+# Repository ownership and intent
+# ----------------------------------------------------------------------------
+# Site-scoped human-authored settings for the StagePlane AWS infrastructure
+# baseline maintained by Vladimir Fonseca. This file is the editable
+# source of truth for one site. Runtime tfvars are generated from this YAML and
+# must not be committed back into the repository.
+# ----------------------------------------------------------------------------
+
+# Platform name prefix used when deriving shared site resource names.
+platform_name: platform
+# Environment label used for naming, tags, and GitOps source selection.
+environment: dev
+# Cloud target for this site. The current public baseline supports AWS.
+cloud: aws
+# IaC runtime for this site. StagePlane supports terraform and opentofu.
+iac_runtime: terraform
+# AWS region where the site is deployed.
+aws_region: us-west-2
+# AWS CLI profile name used by local operator workflows.
+aws_profile: default
+# Business or ownership marker applied into naming and tags.
+company_name: example
+# Canonical EKS cluster name for this site.
+cluster_name: example-platform-dev-us-west-2-eks
+# Private hosted zone name used by the site.
+hosted_zone_name: dev.example.internal
+# Primary VPC CIDR boundary for the site.
+vpc_cidr: 10.0.0.0/16
+# Availability zones used for subnet placement.
+availability_zones:
+  - us-west-2a
+  - us-west-2b
+  - us-west-2c
+# Private subnet CIDRs for worker and control-plane-adjacent workloads.
+private_subnet_cidrs:
+  - 10.0.0.0/20
+  - 10.0.16.0/20
+  - 10.0.32.0/20
+# Public subnet CIDRs for internet-facing components that require them.
+public_subnet_cidrs:
+  - 10.0.128.0/24
+  - 10.0.129.0/24
+  - 10.0.130.0/24
+# Kubernetes version target for the EKS control plane.
+cluster_version: "1.33"
+# -----------------------------------------------------------------------------
+# StagePlane state backend orchestration model.
+# -----------------------------------------------------------------------------
+# Backend is managed by default. In managed mode, stage-0_0 creates the remote
+# state substrate and stagectl switches later stages to the generated backend.
+# For customer-owned state, set mode: external and provide backend-specific
+# config. The AWS reference baseline defaults to an S3 backend.
+backend:
+  mode: managed
+
+  # Example external backend configuration
+  # mode: external
+  # type: s3
+  # config:
+  #   bucket: my-tf-state-bucket
+  #   region: us-west-2
+  #   dynamodb_table: my-tf-lock-table
+  #   key_prefix: sites/site-default/aws-eks-infra
+# StagePlane compute orchestration model.
+# -----------------------------------------------------------------------------
+# This is the only supported worker-capacity contract in the pre-GA baseline.
+# all EKS, Fargate, and optional Karpenter capacity is declared in one place.
+compute:
+  # Baseline EKS/Fargate capacity. At least one group is required.
+  node_groups:
+    - name: system
+      role: system
+      capacity:
+        type: on_demand
+        backend: managed_node_group
+      instance:
+        types:
+          - m7i.large
+      scaling:
+        desired: 3
+        min: 3
+        max: 6
+
+    - name: serverless-system
+      role: system
+      capacity:
+        type: fargate
+        backend: fargate_profile
+      fargate:
+        namespaces:
+          - kube-system
+          - default
+
+    - name: gpu
+      role: gpu
+      capacity:
+        type: mixed
+        mixed:
+          ondemand:
+            base: 1
+          spot:
+            enabled: true
+            max_price: "12.50"
+            allocation_strategy: price-capacity-optimized
+            fallback_to_ondemand: true
+      instance:
+        types:
+          - p5.48xlarge
+          - p4d.24xlarge
+      scaling:
+        min: 0
+        max: 8
+
+  # Optional elastic capacity plane. When disabled or omitted, StagePlane still
+  # deploys the deterministic baseline from node_groups.
+  karpenter:
+    enabled: true
+    namespace: karpenter
+    chart_version: "1.8.1"
+    node_pools:
+      - name: gpu-spot
+        role: gpu
+        capacity:
+          type: spot
+        instance:
+          types:
+            - p5.48xlarge
+            - p4d.24xlarge
+        limits:
+          cpu: "1000"
+
+# Enable Argo CD installation for this site.
+argocd_enabled: true
+# Namespace where the Argo CD control plane is installed.
+argocd_namespace: argocd
+# Helm chart version used for the Argo CD deployment.
+argocd_chart_version: "7.7.16"
+# Enable post-install runtime bootstrap for GitOps activation.
+argocd_bootstrap_enabled: false
+# Base kustomize source applied after the Argo CD controller becomes reachable.
+# Example remote form:
+#   github.com/mycompany/aws-gitops-infrastructure//environments/dev/deployments/argocd?ref=main
+# Example local form:
+#   deployments/site-default/gitops/argocd/base
+argocd_base_kustomize: "github.com/mycompany/aws-gitops-infrastructure//environments/dev/deployments/argocd?ref=main"
+# Follow-on kustomize source for root applications, projects, repositories, and policy.
+# Example remote form:
+#   github.com/mycompany/aws-gitops-infrastructure//environments/dev/bootstrap/argocd?ref=main
+# Example local form:
+#   deployments/site-default/gitops/argocd/bootstrap
+argocd_bootstrap_kustomize: "github.com/mycompany/aws-gitops-infrastructure//environments/dev/bootstrap/argocd?ref=main"
+# Optional seeded admin password used only to create or rotate the encrypted secret file.
+argocd_admin_password: ""
+# Site-scoped SOPS-encrypted Argo CD admin password file.
+argocd_admin_password_sops_file: deployments/site-default/config/argocd/.secret.enc.yaml
