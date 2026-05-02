@@ -29,6 +29,9 @@
 # - make lint SITE_NAME=site-default
 # - make preflight SITE_NAME=site-default
 # - make bootstrap-gitops SITE_NAME=site-default
+# - make managed-state-preflight SITE_NAME=site-default STAGECTL_LICENSE_FILE=/path/to/license.json
+# - make stage-access-describe SITE_NAME=site-default STAGECTL_LICENSE_FILE=/path/to/license.json
+# - make stage-access-render-policy SITE_NAME=site-default STAGE_ACCESS_STAGE=compute STAGE_ACCESS_ACCOUNT_ID=123456789012 STAGECTL_LICENSE_FILE=/path/to/license.json
 # - make clone-site SITE_NAME=site-prod-usw2 FROM_SITE=site-default
 # -----------------------------------------------------------------------------
 
@@ -114,7 +117,21 @@ STAGECTL_IAC_RUNTIME ?= terraform
 # - STAGECTL_LICENSE_FILE=/secure/path/stageplane-license.json
 STAGECTL_LICENSE_FILE ?=
 
-.PHONY: help check-stagectl check-repo-tools check-iac-runtime check-tools-common check-tools check-tools-test check-license demo test deploy plan destroy validate clone-site list-sites status output describe-site lint preflight bootstrap-gitops generate-skills
+# -----------------------------------------------------------------------------
+# Parameter intent: STAGE_ACCESS_STAGE
+# -----------------------------------------------------------------------------
+# Logical or discovered StagePlane stage name used when rendering a provider
+# state-access IAM/RBAC policy example.
+STAGE_ACCESS_STAGE ?= compute
+
+# -----------------------------------------------------------------------------
+# Parameter intent: STAGE_ACCESS_ACCOUNT_ID
+# -----------------------------------------------------------------------------
+# AWS account id used only for rendering example IAM policy ARNs. This value is
+# not used to authenticate and should be replaced by operators for real sites.
+STAGE_ACCESS_ACCOUNT_ID ?= 123456789012
+
+.PHONY: help check-stagectl check-repo-tools check-iac-runtime check-tools-common check-tools check-tools-test check-license demo test deploy plan destroy validate clone-site list-sites status output describe-site lint preflight bootstrap-gitops generate-skills managed-state-preflight stage-access-describe stage-access-render-policy
 
 help:
 	@echo "Available targets:"
@@ -132,6 +149,9 @@ help:
 	@echo "  describe-site     Describe the selected site"
 	@echo "  lint              Run repository and Terraform formatting checks"
 	@echo "  preflight         Run operator preflight checks"
+	@echo "  managed-state-preflight Validate stage-scoped managed-state RBAC"
+	@echo "  stage-access-describe Describe stage IAM/RBAC and state access"
+	@echo "  stage-access-render-policy Render an AWS IAM state-access policy example"
 	@echo "  bootstrap-gitops  Bootstrap Argo CD GitOps for the selected site"
 	@echo "  generate-skills   Generate StagePlane agent skills artifacts"
 	@echo ""
@@ -152,6 +172,9 @@ help:
 	@echo "  STAGECTL=./bin/stagectl make describe-site SITE_NAME=site-default"
 	@echo "  STAGECTL=./bin/stagectl make lint SITE_NAME=site-default"
 	@echo "  STAGECTL=./bin/stagectl make preflight SITE_NAME=site-default"
+	@echo "  STAGECTL=./bin/stagectl make managed-state-preflight SITE_NAME=site-default STAGECTL_LICENSE_FILE=/path/to/license.json"
+	@echo "  STAGECTL=./bin/stagectl make stage-access-describe SITE_NAME=site-default STAGECTL_LICENSE_FILE=/path/to/license.json"
+	@echo "  STAGECTL=./bin/stagectl make stage-access-render-policy SITE_NAME=site-default STAGE_ACCESS_STAGE=compute STAGE_ACCESS_ACCOUNT_ID=123456789012 STAGECTL_LICENSE_FILE=/path/to/license.json"
 	@echo "  STAGECTL=./bin/stagectl make bootstrap-gitops SITE_NAME=site-default"
 	@echo "  STAGECTL=./bin/stagectl make clone-site SITE_NAME=site-prod-usw2 FROM_SITE=site-default"
 	@echo "  STAGECTL=./bin/stagectl make generate-skills SITE_NAME=site-default"
@@ -226,6 +249,15 @@ lint: check-tools-common
 
 preflight: check-tools-common
 	@$(STAGECTL) preflight --iac-runtime $(STAGECTL_IAC_RUNTIME) --site $(SITE_NAME) --verbosity $(STAGECTL_VERBOSITY)
+
+managed-state-preflight: check-repo-tools check-license
+	@STAGECTL_LICENSE_FILE="$(STAGECTL_LICENSE_FILE)" $(STAGECTL) preflight --iac-runtime $(STAGECTL_IAC_RUNTIME) --site $(SITE_NAME) --cloud $(STAGECTL_CLOUD) --check-managed-state --verbosity $(STAGECTL_VERBOSITY)
+
+stage-access-describe: check-repo-tools check-license
+	@STAGECTL_LICENSE_FILE="$(STAGECTL_LICENSE_FILE)" $(STAGECTL) stage-access describe --iac-runtime $(STAGECTL_IAC_RUNTIME) --site $(SITE_NAME) --cloud $(STAGECTL_CLOUD) --verbosity $(STAGECTL_VERBOSITY)
+
+stage-access-render-policy: check-repo-tools check-license
+	@STAGECTL_LICENSE_FILE="$(STAGECTL_LICENSE_FILE)" $(STAGECTL) stage-access render-policy --iac-runtime $(STAGECTL_IAC_RUNTIME) --site $(SITE_NAME) --cloud $(STAGECTL_CLOUD) --stage $(STAGE_ACCESS_STAGE) --account-id $(STAGE_ACCESS_ACCOUNT_ID) --verbosity $(STAGECTL_VERBOSITY)
 
 bootstrap-gitops: check-tools check-license
 	@STAGECTL_LICENSE_FILE="$(STAGECTL_LICENSE_FILE)" $(STAGECTL) bootstrap-gitops --iac-runtime $(STAGECTL_IAC_RUNTIME) --site $(SITE_NAME) --verbosity $(STAGECTL_VERBOSITY)

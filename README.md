@@ -43,6 +43,7 @@ It provides:
 - reusable Terraform modules and landing-zone wrappers
 - `deployments/<site>/...` site-scoped configuration and stage trees
 - human-edited `general_settings.yaml` configuration
+- optional `stage_access.yaml` policies for Pro / Team stage-scoped managed-state RBAC
 - staged workflow ordering for network, DNS, cluster, add-ons, and GitOps
 - contract tests for Terraform modules and landing zones
 - public GitHub Actions for formatting, contract validation, and controlled operations
@@ -52,6 +53,13 @@ It does **not** include:
 - the private StagePlane controller source
 - a committed `stagectl` binary in the Git repository history
 - a bundled production license
+
+
+## Cost and version safety notes
+
+The default `site-default` configuration is intentionally realistic for AI/GPU platform teams. It includes a GPU node-group example with Spot capacity preferences and `fallback_to_ondemand: true`. Operators must review this before using the example in a real AWS account: if Spot capacity is unavailable, fallback to on-demand GPU instances can create materially higher hourly spend. Adjust `compute.node_groups[*].capacity.mixed.spot.max_price`, `fallback_to_ondemand`, and `scaling.max` before production use.
+
+The sample `cluster_version` tracks the current StagePlane reference baseline. Verify the Kubernetes/EKS version is available in your target AWS region before running a real deployment.
 
 ## Quick start
 
@@ -92,6 +100,24 @@ to standardize execution. The CLI handles:
 - selective stage and level targeting
 - validation, plan, deploy, destroy, lint, output, and GitOps bootstrap workflows
 
+## Stage-scoped managed-state RBAC
+
+The public AWS baseline includes an example Pro / Team `managed-state-rbac` configuration:
+
+- `deployments/site-default/config/stage_access.yaml` selects the site-local access policy.
+- `access-policies/stage-access/prod-default.yaml` provides a reusable shared profile.
+
+This model keeps security-sensitive stage IAM/RBAC and state access metadata separate from `general_settings.yaml`. Operators can validate it with a Pro license:
+
+```bash
+export STAGECTL_LICENSE_FILE=/path/to/stageplane-pro.license
+make managed-state-preflight SITE_NAME=site-default STAGECTL=./bin/stagectl
+make stage-access-describe SITE_NAME=site-default STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+make stage-access-render-policy SITE_NAME=site-default STAGE_ACCESS_STAGE=compute STAGE_ACCESS_ACCOUNT_ID=123456789012 STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+```
+
+See `docs/21-stage-access-rbac.md` for the YAML contract, ownership boundary, and operational guidance.
+
 ## GitHub Actions
 
 This repository includes:
@@ -122,6 +148,7 @@ Free/core workflows in this public baseline:
 - `test`, `lint`, and `preflight`
 - `list-sites`, `status`, `output`, and `describe-site`
 - `generate-skills` for operator- and agent-facing skills artifacts
+- Terraform/OpenTofu runtime selection with `--iac-runtime terraform|opentofu`
 - basic AWS targeting with `--cloud aws` and runtime selection with `--iac-runtime terraform|opentofu`
 
 Licensed workflows exposed by `stagectl`:
@@ -130,6 +157,7 @@ Licensed workflows exposed by `stagectl`:
 - `--all-sites` multi-site operations
 - selective mutating staging with `--stage` and `--level` on `deploy` / `destroy`
 - `bootstrap-gitops`
+- `managed-state-rbac` through `stage_access.yaml`, shared stage-access profiles, and stage-access preflight/policy rendering
 
 
 ## Production onboarding

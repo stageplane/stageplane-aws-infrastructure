@@ -4,72 +4,57 @@ Copyright
 Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
 -->
 
-# Release Manifest
+# StagePlane AWS Infrastructure Release Manifest — 20260502053000
 
-## Current release artifact
+## Artifact
 
-- Artifact: `stageplane-aws-infrastructure-20260428203108.zip`
-- Package owner: Vladimir Fonseca
-- Repository model: Public StagePlane AWS infrastructure repository with binary-consumption model for `stagectl`
-- Release status: Validated baseline candidate
+- Package: `stageplane-aws-infrastructure-20260502060000.zip`
+- Component: StagePlane public AWS infrastructure baseline
+- Baseline source: user-provided `stageplane-aws-infrastructure.zip`
 
-## Validation record
+## Release intent
 
-- Validation date: 2026-04-28
-- Native Terraform contract baseline: previously validated through `make test SITE_NAME=site-default` in the approved AWS baseline line
-- Controller dependency model: external `stagectl` binary, no private source included
-- Runtime license model: license supplied externally by operator workflow or protected CI secret when licensed features are used; no reusable license file is shipped in this package
+This release updates the public AWS baseline for the StagePlane `managed-state-rbac` Pro / Team feature. It adds site-local stage access policy wiring, a shared stage-access profile, operator Makefile targets, public operation workflow entries, and documentation.
 
-## Current release summary
-- correct the public positioning copy so StagePlane is described as a general staged Terraform/OpenTofu orchestrator rather than an EKS-only product
-- clarify that the AWS EKS repository is the first published reference baseline, not the definition of the product
-## Prior carried-forward milestones
+## Delta summary
 
-This baseline also includes the following previously landed capabilities:
+- Added `deployments/site-default/config/stage_access.yaml`.
+- Added `access-policies/stage-access/prod-default.yaml`.
+- Added `docs/21-stage-access-rbac.md`.
+- Updated `README.md` to describe managed-state RBAC and the new operator commands.
+- Updated `Makefile` with:
+  - `managed-state-preflight`
+  - `stage-access-describe`
+  - `stage-access-render-policy`
+- Updated `.github/workflows/public-operations.yaml` with manual operations for the same stage-access commands.
+- Preserved existing AWS/EKS stages, Terraform modules, GitHub workflows, SOPS model, and StagePlane public baseline layout.
 
-- StagePlane / `stagectl` naming refactor across public docs, workflows, install scripts, demo content, and package metadata
-- Apache License 2.0 for the public AWS baseline
-- removal of bundled proprietary development license material from the public package
-- public-facing README rewrite for open publication
-- CI updates to inject license material from protected secrets when `stagectl`-driven contract tests are enabled
-- minimal `CONTRIBUTING.md` for public collaboration guidance
-- cleaned repository terminology and typo correction for infrastructure naming
-- public-repo `Makefile` alignment with externally supplied `stagectl` license material
-- Makefile tool-check de-duplication with shared common target and CI licensing note
-- explicit `--cloud` target selection with AWS-first baseline behavior
-- strengthened public README positioning and quick-start examples aligned with `--cloud aws`
-- `STAGECTL_CLOUD` added to the public Makefile and operator examples
-- public SOPS example aliases normalized to `stageplane-sops`
-- public operator surface aligned with the open-core model so free/core workflows do not require `STAGECTL_LICENSE_FILE` while licensed features still do
-- public AWS baseline brand renamed to StagePlane while preserving the `stagectl` operator surface
-- Terraform/OpenTofu unified runtime selection in the public operator surface, Makefile, docs, and CI
-- runtime dispatch and workflow/Makefile validation fixes discovered during full release validation
+## Validation
 
-## Integrity guidance
+Run before promotion:
 
-When publishing a later release, record the following:
+```bash
+unzip -t stageplane-aws-infrastructure-20260502060000.zip
+make check-stagectl STAGECTL=./bin/stagectl
+make describe-site SITE_NAME=site-default STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+```
 
-- release date
-- artifact file name
-- checksum (SHA256)
-- approving owner
-- material changes from prior baseline
+With a Pro license, validate the managed-state RBAC example:
 
-## Ownership note
+```bash
+export STAGECTL_LICENSE_FILE=/path/to/stageplane-pro.license
+make managed-state-preflight SITE_NAME=site-default STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+make stage-access-describe SITE_NAME=site-default STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+make stage-access-render-policy SITE_NAME=site-default STAGE_ACCESS_STAGE=compute STAGE_ACCESS_ACCOUNT_ID=123456789012 STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
+```
 
-This manifest records repository-baseline provenance for this package and should travel with release artifacts.
+## Security posture
 
-## 2026-04-28 validation note
+The added `stage_access.yaml` and shared profile contain placeholder AWS role ARNs only. They do not contain cloud credentials, external IDs, access keys, secrets, or production account information. Operators must replace placeholder ARNs before production use.
 
-- Preserved full public baseline file count.
-- Enforced unified `compute.node_groups` contract as the only worker capacity source of truth.
-- Removed legacy flat EKS sizing keys from active settings and tests.
-- Kept optional `compute.karpenter.node_pools` and Fargate capacity under the unified compute model.
-- Hardened Fargate/EC2 node group Terraform input schema and restored missing test assertion condition.
 
-- Backend managed/external model
+## 20260502060000 hardening delta
 
-- Added backend.hcl.example for backend configuration discoverability
-- Clarified LICENSE for evaluation usage
-- Completed settings-layer logging propagation for compute stage scaling.
-- Refreshed bundled bin/stagectl with embedded version 20260428203108.
+- Added README warnings for GPU Spot fallback cost risk and sample Kubernetes/EKS version availability.
+- Updated packaged `bin/stagectl` to the 20260502060000 hardening binary.
+- Preserved StagePlane managed-state RBAC examples and binary provenance files.

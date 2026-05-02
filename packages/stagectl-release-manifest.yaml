@@ -1,0 +1,12 @@
+apiVersion: stageplane.io/v1
+kind: StagectlReleaseManifest
+metadata:
+  component: stagectl
+  version: "20260502060000"
+spec:
+  sourceArtifact: stageplane-controller-20260502060000.zip
+  binaryPath: bin/stagectl
+  checksumPath: bin/stagectl.sha256
+  publishedAt: "2026-05-02T06:00:00Z"
+  notes:
+    - Pre-release hardening binary with strict nested settings parsing, subject enforcement, and secret redaction safeguards.
