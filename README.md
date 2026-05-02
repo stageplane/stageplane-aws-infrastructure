@@ -51,7 +51,7 @@ It provides:
 It does **not** include:
 
 - the private StagePlane controller source
-- a committed `stagectl` binary in the Git repository history
+- a committed architecture-specific `stagectl` binary in the Git repository history
 - a bundled production license
 
 
@@ -63,17 +63,30 @@ The sample `cluster_version` tracks the current StagePlane reference baseline. V
 
 ## Quick start
 
-1. If you are using the Git repository directly, obtain a released `stagectl` binary from the private StagePlane controller release channel. The packaged release zip may already include `./bin/stagectl` for convenience.
-2. Place the binary at `./bin/stagectl` or install it in `PATH`.
-3. Run the free/core workflows directly.
-4. Provide `STAGECTL_LICENSE_FILE` only when you need licensed features such as `clone-site`, `--all-sites`, selective mutating staging, or `bootstrap-gitops`.
+1. Install `stagectl` from the public StagePlane release-artifact repository or use the repo-local shim at `./bin/stagectl`.
+2. Run the free/core workflows directly.
+3. Provide `STAGECTL_LICENSE_FILE` only when you need licensed features such as `clone-site`, `--all-sites`, selective mutating staging, `bootstrap-gitops`, or `managed-state-rbac`.
 
-Example free/core flow:
+The repository stores `./bin/stagectl` as a small architecture-neutral shim, not as a compiled binary. The shim downloads the correct binary for your OS and CPU architecture from `stageplane/stagectl-releases`. This avoids Linux/macOS/ARM/x86 mismatch errors.
+
+Install directly from the public release repository:
 
 ```bash
-mkdir -p ./bin
-cp /path/to/stagectl ./bin/stagectl
+curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh" | bash
+```
+
+Pin a specific version:
+
+```bash
+STAGECTL_VERSION=20260502060000 \
+  curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh" | bash
+```
+
+Use the repo-local shim:
+
+```bash
 export STAGECTL=./bin/stagectl
+export STAGECTL_VERSION=20260502060000
 
 make list-sites
 make validate SITE_NAME=site-default STAGECTL_CLOUD=aws STAGECTL_IAC_RUNTIME=terraform
@@ -128,6 +141,8 @@ This repository includes:
   - installs `stagectl`, formats the repository, and runs public contract tests across the selected IaC runtime
 - `public-operations.yaml`
   - manual operator workflows for plan/deploy/destroy/validate and related commands
+  - uses GitHub OIDC (`AWS_ROLE_TO_ASSUME`) instead of long-lived AWS access keys
+  - should run under a protected `public-operations` GitHub Environment with required reviewers before deploy/destroy is enabled
 
 ## Terraform and OpenTofu runtime selection
 
@@ -197,7 +212,7 @@ For local or CI execution, provide:
 - `STAGECTL` for all controller-driven workflows
 - `STAGECTL_LICENSE_FILE` only for licensed features
 
-The Git repository does not ship a reusable proprietary license file. Release zips may include a convenience `./bin/stagectl` binary, but not a reusable proprietary license file.
+The Git repository does not ship a reusable proprietary license file. The `./bin/stagectl` file is an architecture-neutral shim that installs the correct controller binary from `stageplane/stagectl-releases`; it is not a compiled proprietary binary.
 
 ## Repository layout
 
