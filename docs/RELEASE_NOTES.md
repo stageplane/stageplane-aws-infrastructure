@@ -60,3 +60,11 @@ The example uses placeholder AWS role ARNs and state bucket names. It is intende
 - Documented GPU Spot fallback cost risk in the public README.
 - Documented that sample Kubernetes/EKS versions must be verified in the target AWS region before live deployment.
 - Preserved managed-state RBAC examples and public `stagectl` binary consumption flow.
+
+## 20260502064500 — stagectl release distribution update
+
+- Replaced the committed architecture-specific `bin/stagectl` binary with an architecture-neutral shim.
+- Added public `stageplane/stagectl-releases` installer consumption for macOS/Linux/Windows and amd64/arm64 binaries.
+- Updated public CI and operations workflows to use the installer/shim model with `STAGECTL_VERSION`.
+- Updated `public-operations.yaml` to use GitHub OIDC with `AWS_ROLE_TO_ASSUME` instead of long-lived AWS access keys.
+- Added `docs/22-stagectl-release-distribution.md` documenting the installer, shim, manifest, and OIDC model.

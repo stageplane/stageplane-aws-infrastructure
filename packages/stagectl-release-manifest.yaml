@@ -1,12 +1,47 @@
+# Copyright (c) StagePlane contributors.
+#
+# Architectural intent:
+#   Pins the stagectl controller release consumed by this public AWS baseline.
+#   The actual architecture-specific binaries are published as GitHub Release
+#   assets in stageplane/stagectl-releases rather than committed directly into
+#   this infrastructure repository.
+#
+# Ownership boundary:
+#   This file owns release metadata and asset names/checksum placeholders.
+#
+# Non-responsibilities:
+#   It does not contain licenses, secrets, cloud credentials, or customer data.
+
 apiVersion: stageplane.io/v1
 kind: StagectlReleaseManifest
 metadata:
   component: stagectl
   version: "20260502060000"
 spec:
-  sourceArtifact: stageplane-controller-20260502060000.zip
-  binaryPath: bin/stagectl
-  checksumPath: bin/stagectl.sha256
+  source_repo: "stageplane/stagectl-releases"
+  release_tag: "v20260502060000"
+  controller_source: "stageplane/stageplane-private-source-with-build-release"
+  install_script: "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh"
+  local_shim: "bin/stagectl"
+  shim_checksum_path: "bin/stagectl.sha256"
   publishedAt: "2026-05-02T06:00:00Z"
+  assets:
+    darwin_arm64:
+      name: "stagectl-darwin-arm64"
+      sha256: "published-in-stagectl-releases-checksums.txt"
+    darwin_amd64:
+      name: "stagectl-darwin-amd64"
+      sha256: "published-in-stagectl-releases-checksums.txt"
+    linux_amd64:
+      name: "stagectl-linux-amd64"
+      sha256: "published-in-stagectl-releases-checksums.txt"
+    linux_arm64:
+      name: "stagectl-linux-arm64"
+      sha256: "published-in-stagectl-releases-checksums.txt"
+    windows_amd64:
+      name: "stagectl-windows-amd64.exe"
+      sha256: "published-in-stagectl-releases-checksums.txt"
   notes:
-    - Pre-release hardening binary with strict nested settings parsing, subject enforcement, and secret redaction safeguards.
+    - "The Git repository stores a small architecture-neutral shim at bin/stagectl, not a compiled controller binary."
+    - "The shim downloads the correct OS/architecture binary from stageplane/stagectl-releases."
+    - "Use STAGECTL_VERSION to pin the controller version and STAGECTL_INSTALLER_URL for controlled mirrors."
