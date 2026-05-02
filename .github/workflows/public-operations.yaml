@@ -28,6 +28,9 @@ on:
           - output
           - lint
           - preflight
+          - managed-state-preflight
+          - stage-access-describe
+          - stage-access-render-policy
           - validate
           - plan
           - deploy
@@ -43,6 +46,16 @@ on:
         description: Source site used by clone-site.
         required: false
         default: site-default
+        type: string
+      stage_access_stage:
+        description: Stage name used by stage-access-render-policy.
+        required: false
+        default: compute
+        type: string
+      stage_access_account_id:
+        description: AWS account id used when rendering stage access IAM policy examples.
+        required: false
+        default: "123456789012"
         type: string
       verbosity:
         description: stagectl output verbosity.
@@ -76,6 +89,8 @@ jobs:
     env:
       SITE_NAME: ${{ inputs.site_name }}
       FROM_SITE: ${{ inputs.from_site }}
+      STAGE_ACCESS_STAGE: ${{ inputs.stage_access_stage }}
+      STAGE_ACCESS_ACCOUNT_ID: ${{ inputs.stage_access_account_id }}
       STAGECTL_VERBOSITY: ${{ inputs.verbosity }}
       STAGECTL_DOWNLOAD_URL: ${{ inputs.stagectl_download_url || vars.STAGECTL_DOWNLOAD_URL }}
       STAGECTL: ./bin/stagectl
@@ -151,6 +166,15 @@ jobs:
               ;;
             preflight)
               make preflight SITE_NAME="$SITE_NAME"
+              ;;
+            managed-state-preflight)
+              make managed-state-preflight SITE_NAME="$SITE_NAME"
+              ;;
+            stage-access-describe)
+              make stage-access-describe SITE_NAME="$SITE_NAME"
+              ;;
+            stage-access-render-policy)
+              make stage-access-render-policy SITE_NAME="$SITE_NAME" STAGE_ACCESS_STAGE="$STAGE_ACCESS_STAGE" STAGE_ACCESS_ACCOUNT_ID="$STAGE_ACCESS_ACCOUNT_ID"
               ;;
             validate)
               make validate SITE_NAME="$SITE_NAME"

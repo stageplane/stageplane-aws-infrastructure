@@ -1,0 +1,34 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+# Architectural intent:
+#   Defines site-local stage access for the default StagePlane AWS reference
+#   deployment. This file intentionally separates stage IAM/RBAC and managed
+#   state access from general_settings.yaml, matching the StagePlane model where
+#   site topology and execution permissions are reviewed independently.
+#
+# Ownership boundary:
+#   This file owns the selected shared stage-access profile and the site-specific
+#   managed-state metadata needed by stagectl to render per-stage S3 backend
+#   keys and AWS role bindings.
+#
+# Non-responsibilities:
+#   This file does not contain cloud credentials, SOPS secrets, Terraform
+#   variables, VPC CIDRs, node group definitions, or module source paths.
+# -----------------------------------------------------------------------------
+apiVersion: stageplane.io/v1
+kind: StageAccessPolicy
+profile: prod-default
+
+metadata:
+  site: site-default
+  owner: platform-security
+
+managed_state:
+  bucket: stageplane-example-tfstate
+  region: us-west-2
+  lock_table: stageplane-example-tflocks
+  kms_key_alias: alias/stageplane-example-state
+  key_template: "sites/{{ site.name }}/stages/{{ stage.name }}/terraform.tfstate"

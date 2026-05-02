@@ -1,0 +1,82 @@
+# -----------------------------------------------------------------------------
+# Copyright
+# -----------------------------------------------------------------------------
+# Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
+#
+# Architectural intent:
+#   Provides a reusable StagePlane stage-access profile for AWS sites that want
+#   per-stage managed-state isolation. The profile keeps IAM/RBAC bindings and
+#   state-layout intent outside general_settings.yaml so security teams can
+#   review execution privileges independently from site topology.
+#
+# Ownership boundary:
+#   This file owns shared defaults for managed Terraform/OpenTofu state layout,
+#   stage role mapping, approval posture, and permission profile names. Site
+#   specific files may override these values in deployments/<site>/config/stage_access.yaml.
+#
+# Non-responsibilities:
+#   This file does not define VPC topology, EKS node groups, Terraform modules,
+#   cloud credentials, or secret values. Any external ID or credential material
+#   must be referenced through SOPS or runtime environment mechanisms, never
+#   embedded here.
+# -----------------------------------------------------------------------------
+apiVersion: stageplane.io/v1
+kind: StageAccessPolicy
+metadata:
+  owner: platform-security
+
+defaults:
+  require_stage_role: true
+  session_name_template: "stageplane-{{ site.name }}-{{ stage.name }}"
+  redact_identifiers: true
+
+managed_state:
+  provider: s3
+  bucket: stageplane-example-tfstate
+  region: us-west-2
+  lock_table: stageplane-example-tflocks
+  kms_key_alias: alias/stageplane-example-state
+  key_template: "sites/{{ site.name }}/stages/{{ stage.name }}/terraform.tfstate"
+
+stages:
+  landingzone-general-config:
+    owner: platform-bootstrap
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-bootstrap
+    permission_profile: bootstrap
+    approval: required
+
+  landingzone-aws-vpc:
+    owner: platform-network
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-network
+    permission_profile: network
+    approval: required
+
+  landingzone-aws-route53:
+    owner: platform-network
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-dns
+    permission_profile: dns
+    approval: required
+
+  landingzone-aws-eks-cluster:
+    owner: platform-compute
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-compute
+    permission_profile: compute
+    approval: required
+
+  landingzone-aws-eks-cluster-addons:
+    owner: platform-compute
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-addons
+    permission_profile: addons
+    approval: required
+
+  landingzone-aws-karpenter:
+    owner: platform-compute
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-karpenter
+    permission_profile: compute
+    approval: required
+
+  landingzone-aws-argocd:
+    owner: platform-gitops
+    role_arn: arn:aws:iam::123456789012:role/stageplane-example-gitops
+    permission_profile: gitops
+    approval: required
