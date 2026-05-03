@@ -3,14 +3,14 @@
 #
 # Architectural intent:
 #   Repository-local stagectl shim for the public AWS baseline. The public
-#   infrastructure repository no longer stores one architecture-specific
-#   controller binary. Instead, this shim downloads the correct OS/architecture
-#   binary from the public stageplane/stagectl-releases repository and delegates
-#   execution to the cached binary.
+#   infrastructure repository does not store one architecture-specific
+#   controller binary. Instead, this shim installs the correct OS/architecture
+#   binary from the public stageplane/stagectl-releases repository into a
+#   local operator cache and delegates execution to that cached binary.
 #
 # Ownership boundary:
-#   This shim owns controller binary discovery, architecture-neutral installation,
-#   cache reuse, and delegation.
+#   This shim owns controller binary discovery, architecture-neutral download,
+#   checksum verification, cache reuse, and delegation for this repository.
 #
 # Non-responsibilities:
 #   It does not build stagectl from source, issue licenses, configure cloud
@@ -18,23 +18,148 @@
 
 set -euo pipefail
 
+REPO="${STAGECTL_RELEASE_REPO:-stageplane/stagectl-releases}"
 VERSION="${STAGECTL_VERSION:-20260502060000}"
 CACHE_DIR="${STAGECTL_CACHE_DIR:-${HOME}/.stageplane/bin}"
-INSTALLER_URL="${STAGECTL_INSTALLER_URL:-https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh}"
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-EXT=""
-if [[ "${OS}" == msys* || "${OS}" == mingw* || "${OS}" == cygwin* ]]; then
-  EXT=".exe"
-fi
-TARGET="${CACHE_DIR}/stagectl${EXT}"
+BINARY_NAME="${STAGECTL_BINARY_NAME:-stagectl}"
+VERIFY_CHECKSUM="${STAGECTL_VERIFY_CHECKSUM:-true}"
 
-if [[ ! -x "${TARGET}" ]] || [[ "$("${TARGET}" version 2>/dev/null || true)" != "${VERSION}" ]]; then
+log() {
+  printf 'stagectl shim: %s\n' "$*" >&2
+}
+
+fail() {
+  printf 'stagectl shim error: %s\n' "$*" >&2
+  exit 1
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || fail "required command not found: $1"
+}
+
+normalize_os() {
+  case "$(uname -s | tr '[:upper:]' '[:lower:]')" in
+    darwin) printf 'darwin' ;;
+    linux) printf 'linux' ;;
+    msys*|mingw*|cygwin*) printf 'windows' ;;
+    *) fail "unsupported operating system: $(uname -s)" ;;
+  esac
+}
+
+normalize_arch() {
+  case "$(uname -m)" in
+    arm64|aarch64) printf 'arm64' ;;
+    x86_64|amd64) printf 'amd64' ;;
+    *) fail "unsupported CPU architecture: $(uname -m)" ;;
+  esac
+}
+
+resolve_tag() {
+  local version="$1"
+  if [[ "${version}" == "latest" ]]; then
+    printf 'latest'
+    return
+  fi
+  if [[ "${version}" == v* ]]; then
+    printf '%s' "${version}"
+  else
+    printf 'v%s' "${version}"
+  fi
+}
+
+sha_cmd() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf 'sha256sum'
+  elif command -v shasum >/dev/null 2>&1; then
+    printf 'shasum -a 256'
+  else
+    fail "sha256sum or shasum is required for checksum verification"
+  fi
+}
+
+checksum_asset_line() {
+  local checksums_file="$1"
+  local asset_name="$2"
+  awk -v asset="${asset_name}" '$2 == asset {print $1}' "${checksums_file}"
+}
+
+cached_target() {
+  local os="$1"
+  local ext=""
+  if [[ "${os}" == "windows" ]]; then
+    ext=".exe"
+  fi
+  printf '%s/%s%s' "${CACHE_DIR}" "${BINARY_NAME}" "${ext}"
+}
+
+install_stagectl() {
+  require_cmd curl
+  require_cmd awk
+
+  local os arch ext asset tag base_url tmpdir target checksum_file expected actual sha
+  os="$(normalize_os)"
+  arch="$(normalize_arch)"
+  ext=""
+  if [[ "${os}" == "windows" ]]; then
+    ext=".exe"
+  fi
+
+  asset="stagectl-${os}-${arch}${ext}"
+  tag="$(resolve_tag "${VERSION}")"
+
+  if [[ "${tag}" == "latest" ]]; then
+    base_url="https://github.com/${REPO}/releases/latest/download"
+  else
+    base_url="https://github.com/${REPO}/releases/download/${tag}"
+  fi
+
+  tmpdir="$(mktemp -d)"
+  # Architect intent: expand tmpdir at trap registration time so set -u cannot
+  # fail after this function returns and its local variables leave scope.
+  trap "rm -rf '${tmpdir}'" EXIT
+
+  log "repository: ${REPO}"
+  log "version: ${VERSION}"
+  log "platform: ${os}/${arch}"
+  log "asset: ${asset}"
+  log "install dir: ${CACHE_DIR}"
+
+  curl -fsSL "${base_url}/${asset}" -o "${tmpdir}/${asset}" || fail "failed to download ${asset} from ${base_url}"
+
+  if [[ "${VERIFY_CHECKSUM}" == "true" ]]; then
+    checksum_file="${tmpdir}/checksums.txt"
+    curl -fsSL "${base_url}/checksums.txt" -o "${checksum_file}" || fail "failed to download checksums.txt from ${base_url}"
+    expected="$(checksum_asset_line "${checksum_file}" "${asset}")"
+    [[ -n "${expected}" ]] || fail "checksums.txt does not contain an entry for ${asset}"
+    sha="$(sha_cmd)"
+    actual="$(${sha} "${tmpdir}/${asset}" | awk '{print $1}')"
+    [[ "${actual}" == "${expected}" ]] || fail "checksum mismatch for ${asset}: expected ${expected}, got ${actual}"
+    log "checksum verified: ${actual}"
+  else
+    log "checksum verification disabled by STAGECTL_VERIFY_CHECKSUM=false"
+  fi
+
   mkdir -p "${CACHE_DIR}"
-  curl -fsSL "${INSTALLER_URL}" | \
-    STAGECTL_VERSION="${VERSION}" \
-    STAGECTL_INSTALL_DIR="${CACHE_DIR}" \
-    STAGECTL_BINARY_NAME="stagectl" \
-    bash
-fi
+  target="$(cached_target "${os}")"
+  install -m 0755 "${tmpdir}/${asset}" "${target}"
+  log "installed: ${target}"
+}
 
-exec "${TARGET}" "$@"
+main() {
+  local os target current_version
+  os="$(normalize_os)"
+  target="$(cached_target "${os}")"
+
+  current_version=""
+  if [[ -x "${target}" ]]; then
+    current_version="$(${target} version 2>/dev/null || true)"
+  fi
+
+  if [[ ! -x "${target}" || "${current_version}" != "${VERSION}" ]]; then
+    install_stagectl
+  fi
+
+  exec "${target}" "$@"
+}
+
+main "$@"

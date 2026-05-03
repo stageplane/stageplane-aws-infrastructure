@@ -68,3 +68,11 @@ The example uses placeholder AWS role ARNs and state bucket names. It is intende
 - Updated public CI and operations workflows to use the installer/shim model with `STAGECTL_VERSION`.
 - Updated `public-operations.yaml` to use GitHub OIDC with `AWS_ROLE_TO_ASSUME` instead of long-lived AWS access keys.
 - Added `docs/22-stagectl-release-distribution.md` documenting the installer, shim, manifest, and OIDC model.
+
+## 20260503010000 — AWS shim installer cleanup hardening
+
+- Hardened the repository-local `bin/stagectl` shim used by the public AWS baseline.
+- The shim now downloads and verifies the correct stagectl release asset directly, then delegates to the cached binary.
+- This avoids CI failures caused by unsafe temporary-directory cleanup in an external installer path while preserving architecture-neutral release distribution.
+- Restored GitHub Actions and release placeholder artifacts remain present.
+- GitHub Actions remain updated away from deprecated Node.js 20 action runtimes.
