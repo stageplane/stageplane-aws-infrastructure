@@ -43,5 +43,5 @@ spec:
       sha256: "published-in-stagectl-releases-checksums.txt"
   notes:
     - "The Git repository stores a small architecture-neutral shim at bin/stagectl, not a compiled controller binary."
-    - "The shim downloads the correct OS/architecture binary from stageplane/stagectl-releases."
-    - "Use STAGECTL_VERSION to pin the controller version and STAGECTL_INSTALLER_URL for controlled mirrors."
+    - "The shim downloads and verifies the correct OS/architecture binary from stageplane/stagectl-releases."
+    - "Use STAGECTL_VERSION to pin the controller version, STAGECTL_RELEASE_REPO for controlled mirrors, and STAGECTL_CACHE_DIR for operator-local cache placement."

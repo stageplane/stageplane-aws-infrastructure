@@ -66,3 +66,10 @@ The added `stage_access.yaml` and shared profile contain placeholder AWS role AR
 - Updated public CI and operations workflows to use the installer/shim model with `STAGECTL_VERSION`.
 - Updated `public-operations.yaml` to use GitHub OIDC with `AWS_ROLE_TO_ASSUME` instead of long-lived AWS access keys.
 - Added `docs/22-stagectl-release-distribution.md` documenting the installer, shim, manifest, and OIDC model.
+
+## 20260503010000 — AWS shim installer cleanup hardening
+
+- Hardened the repository-local `bin/stagectl` shim so the public AWS baseline no longer depends on a curl-piped installer cleanup path during CI bootstrap.
+- Preserved architecture-neutral stagectl release consumption while adding local OS/architecture asset download, checksum verification, cache reuse, and safe temporary-directory cleanup directly in the shim.
+- Preserved restored GitHub Actions workflows and release artifacts from the 20260502060000 baseline.
+- Kept GitHub Actions away from deprecated Node.js 20 action runtimes.
