@@ -79,6 +79,15 @@ resource "helm_release" "karpenter" {
     name  = "serviceAccount.name"
     value = "karpenter"
   }
+
+  dynamic "set" {
+    for_each = var.irsa_role_arn == "" ? [] : [var.irsa_role_arn]
+
+    content {
+      name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+      value = set.value
+    }
+  }
 }
 
 

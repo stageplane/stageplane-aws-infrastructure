@@ -47,6 +47,19 @@ variable "chart_version" {
   default     = "1.8.1"
 }
 
+variable "irsa_role_arn" {
+  description = <<-EOT
+  Optional IAM role ARN bound to the Karpenter controller service account.
+
+  Ownership boundary:
+  This module consumes the role ARN and annotates the service account; it does
+  not create broad AWS IAM permissions for Karpenter. Site or enterprise
+  overlays must own the exact IAM policy boundary for node provisioning.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "node_pools" {
   description = "StagePlane Karpenter node pools. Optional because Karpenter can be installed before any elastic pools are declared."
   type        = any

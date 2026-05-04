@@ -35,5 +35,6 @@ module "aws_karpenter" {
 
   cluster_name     = var.cluster_name
   cluster_endpoint = var.cluster_endpoint
+  irsa_role_arn    = var.karpenter_irsa_role_arn
   node_pools       = var.karpenter_node_pools
 }

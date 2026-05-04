@@ -45,6 +45,12 @@ variable "karpenter_chart_version" {
   default     = "1.8.1"
 }
 
+variable "karpenter_irsa_role_arn" {
+  description = "Optional IAM role ARN annotated onto the Karpenter controller service account."
+  type        = string
+  default     = ""
+}
+
 variable "karpenter_node_pools" {
   description = "Optional StagePlane Karpenter node pools rendered from settings.compute.karpenter.node_pools."
   type        = any
