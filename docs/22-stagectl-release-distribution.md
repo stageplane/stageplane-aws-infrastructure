@@ -30,7 +30,7 @@ curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/
 Pinned version:
 
 ```bash
-STAGECTL_VERSION=20260502060000 \
+STAGECTL_VERSION=20260503030500 \
   curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh" | bash
 ```
 
@@ -38,7 +38,7 @@ STAGECTL_VERSION=20260502060000 \
 
 ```bash
 export STAGECTL=./bin/stagectl
-export STAGECTL_VERSION=20260502060000
+export STAGECTL_VERSION=20260503030500
 make validate SITE_NAME=site-default STAGECTL_IAC_RUNTIME=terraform
 ```
 
