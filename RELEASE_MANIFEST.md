@@ -8,7 +8,7 @@ Copyright (c) 2026 Vladimir Fonseca. All rights reserved.
 
 ## Artifact
 
-- Package: `stageplane-aws-infrastructure-20260502060000.zip`
+- Package: `stageplane-aws-infrastructure-20260503030500.zip`
 - Component: StagePlane public AWS infrastructure baseline
 - Baseline source: user-provided `stageplane-aws-infrastructure.zip`
 
@@ -34,7 +34,7 @@ This release updates the public AWS baseline for the StagePlane `managed-state-r
 Run before promotion:
 
 ```bash
-unzip -t stageplane-aws-infrastructure-20260502060000.zip
+unzip -t stageplane-aws-infrastructure-20260503030500.zip
 make check-stagectl STAGECTL=./bin/stagectl
 make describe-site SITE_NAME=site-default STAGECTL=./bin/stagectl STAGECTL_VERBOSITY=json
 ```
@@ -53,10 +53,10 @@ make stage-access-render-policy SITE_NAME=site-default STAGE_ACCESS_STAGE=comput
 The added `stage_access.yaml` and shared profile contain placeholder AWS role ARNs only. They do not contain cloud credentials, external IDs, access keys, secrets, or production account information. Operators must replace placeholder ARNs before production use.
 
 
-## 20260502060000 hardening delta
+## 20260503030500 hardening delta
 
 - Added README warnings for GPU Spot fallback cost risk and sample Kubernetes/EKS version availability.
-- Updated packaged `bin/stagectl` to the 20260502060000 hardening binary.
+- Updated packaged `bin/stagectl` to the 20260503030500 hardening binary.
 - Preserved StagePlane managed-state RBAC examples and binary provenance files.
 
 ## 20260502064500 — stagectl release distribution update
@@ -71,7 +71,7 @@ The added `stage_access.yaml` and shared profile contain placeholder AWS role AR
 
 - Hardened the repository-local `bin/stagectl` shim so the public AWS baseline no longer depends on a curl-piped installer cleanup path during CI bootstrap.
 - Preserved architecture-neutral stagectl release consumption while adding local OS/architecture asset download, checksum verification, cache reuse, and safe temporary-directory cleanup directly in the shim.
-- Preserved restored GitHub Actions workflows and release artifacts from the 20260502060000 baseline.
+- Preserved restored GitHub Actions workflows and release artifacts from the 20260503030500 baseline.
 - Kept GitHub Actions away from deprecated Node.js 20 action runtimes.
 
 ## 20260503024500 — OIDC, EKS endpoint, and Karpenter IRSA hardening

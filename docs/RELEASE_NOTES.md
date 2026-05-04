@@ -55,7 +55,7 @@ Added:
 
 The example uses placeholder AWS role ARNs and state bucket names. It is intended to demonstrate the StagePlane access model and must be customized before production use.
 
-## 20260502060000 — Pre-release hardening notes
+## 20260503030500 — Pre-release hardening notes
 
 - Documented GPU Spot fallback cost risk in the public README.
 - Documented that sample Kubernetes/EKS versions must be verified in the target AWS region before live deployment.

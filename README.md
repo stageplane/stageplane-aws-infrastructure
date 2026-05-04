@@ -78,7 +78,7 @@ curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/
 Pin a specific version:
 
 ```bash
-STAGECTL_VERSION=20260502060000 \
+STAGECTL_VERSION=20260503030500 \
   curl -fsSL "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh" | bash
 ```
 
@@ -86,7 +86,7 @@ Use the repo-local shim:
 
 ```bash
 export STAGECTL=./bin/stagectl
-export STAGECTL_VERSION=20260502060000
+export STAGECTL_VERSION=20260503030500
 
 make list-sites
 make validate SITE_NAME=site-default STAGECTL_CLOUD=aws STAGECTL_IAC_RUNTIME=terraform
