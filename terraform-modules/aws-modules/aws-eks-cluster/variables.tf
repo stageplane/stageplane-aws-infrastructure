@@ -37,6 +37,16 @@ variable "private_subnet_ids" {
 }
 
 
+variable "cluster_endpoint_public_access_cidrs" {
+  description = <<-EOT
+  Source CIDR allow-list for the public EKS API endpoint. This module passes
+  the value directly to the upstream EKS module and intentionally avoids the
+  upstream open-to-world default.
+  EOT
+  type        = list(string)
+  default     = ["203.0.113.0/24"]
+}
+
 variable "node_groups" {
   description = <<-EOT
   Normalized StagePlane node groups rendered by stagectl.

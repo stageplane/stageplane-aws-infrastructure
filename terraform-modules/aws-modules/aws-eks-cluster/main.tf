@@ -47,13 +47,14 @@ module "control_plane_access" {
 module "managed_node_groups" {
   source = "./modules/managed-node-groups"
 
-  cluster_name       = var.cluster_name
-  cluster_version    = var.cluster_version
-  vpc_id             = var.vpc_id
-  private_subnet_ids = var.private_subnet_ids
-  node_groups        = var.node_groups
-  access_entry_arns  = module.control_plane_access.principal_arns
-  common_tags        = local.cluster_tags
+  cluster_name                         = var.cluster_name
+  cluster_version                      = var.cluster_version
+  vpc_id                               = var.vpc_id
+  private_subnet_ids                   = var.private_subnet_ids
+  node_groups                          = var.node_groups
+  cluster_endpoint_public_access_cidrs = var.cluster_endpoint_public_access_cidrs
+  access_entry_arns                    = module.control_plane_access.principal_arns
+  common_tags                          = local.cluster_tags
 }
 
 # -----------------------------------------------------------------------------

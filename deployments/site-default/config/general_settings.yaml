@@ -50,6 +50,10 @@ public_subnet_cidrs:
   - 10.0.130.0/24
 # Kubernetes version target for the EKS control plane.
 cluster_version: "1.33"
+# Public EKS API endpoint source allow-list. Replace this documentation CIDR
+# with operator/VPN/bastion public egress CIDRs before real deployments.
+cluster_endpoint_public_access_cidrs:
+  - 203.0.113.0/24
 # -----------------------------------------------------------------------------
 # StagePlane state backend orchestration model.
 # -----------------------------------------------------------------------------
@@ -124,6 +128,9 @@ compute:
     enabled: true
     namespace: karpenter
     chart_version: "1.8.1"
+    # Optional IAM role ARN for the Karpenter controller service account.
+    # Leave empty in the public baseline until a site-owned role is created.
+    irsa_role_arn: ""
     node_pools:
       - name: gpu-spot
         role: gpu
