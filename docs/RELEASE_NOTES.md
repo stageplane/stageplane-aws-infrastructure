@@ -1,4 +1,4 @@
-# StagePlane Release — 20260428211650
+# StagePlane Release — 20260503030500
 
 ## Summary
 
@@ -33,15 +33,15 @@ StagePlane is a staged Terraform and OpenTofu orchestrator with a human-first YA
 
 ## Artifacts
 
-- `stageplane-aws-infrastructure-20260428211650.zip`
-- `stageplane-controller-20260428211650.zip`
-- `stageplane-docs-site-20260428211650.zip`
+- `stageplane-aws-infrastructure-20260503030500.zip`
+- `stageplane-controller-20260503030500.zip`
+- `stageplane-docs-site-20260503030500.zip`
 
 ## Status
 
 Ready for early customer and internal platform-team evaluation.
 
-## 20260502053000 — Managed-state RBAC public baseline update
+## 20260503030500 — Managed-state RBAC public baseline update
 
 This release adds public AWS baseline support for the StagePlane `managed-state-rbac` Pro / Team feature.
 
@@ -55,13 +55,13 @@ Added:
 
 The example uses placeholder AWS role ARNs and state bucket names. It is intended to demonstrate the StagePlane access model and must be customized before production use.
 
-## 20260502060000 — Pre-release hardening notes
+## 20260503030500 — Pre-release hardening notes
 
 - Documented GPU Spot fallback cost risk in the public README.
 - Documented that sample Kubernetes/EKS versions must be verified in the target AWS region before live deployment.
 - Preserved managed-state RBAC examples and public `stagectl` binary consumption flow.
 
-## 20260502064500 — stagectl release distribution update
+## 20260503030500 — stagectl release distribution update
 
 - Replaced the committed architecture-specific `bin/stagectl` binary with an architecture-neutral shim.
 - Added public `stageplane/stagectl-releases` installer consumption for macOS/Linux/Windows and amd64/arm64 binaries.
@@ -69,7 +69,7 @@ The example uses placeholder AWS role ARNs and state bucket names. It is intende
 - Updated `public-operations.yaml` to use GitHub OIDC with `AWS_ROLE_TO_ASSUME` instead of long-lived AWS access keys.
 - Added `docs/22-stagectl-release-distribution.md` documenting the installer, shim, manifest, and OIDC model.
 
-## 20260503010000 — AWS shim installer cleanup hardening
+## 20260503030500 — AWS shim installer cleanup hardening
 
 - Hardened the repository-local `bin/stagectl` shim used by the public AWS baseline.
 - The shim now downloads and verifies the correct stagectl release asset directly, then delegates to the cached binary.
@@ -77,15 +77,15 @@ The example uses placeholder AWS role ARNs and state bucket names. It is intende
 - Restored GitHub Actions and release placeholder artifacts remain present.
 - GitHub Actions remain updated away from deprecated Node.js 20 action runtimes.
 
-## 20260503024500 — OIDC, EKS endpoint, and Karpenter IRSA hardening
+## 20260503030500 — OIDC, EKS endpoint, and Karpenter IRSA hardening
 
 - `public-operations.yaml` now matches the documented OIDC posture by assuming `AWS_ROLE_TO_ASSUME` instead of consuming long-lived AWS access keys.
 - The EKS cluster module now exposes `cluster_endpoint_public_access_cidrs` so public endpoint access is explicitly restricted by site configuration.
 - Karpenter now supports an optional `compute.karpenter.irsa_role_arn` setting that annotates the controller service account for runtime node provisioning.
 - Generated runtime tfvars were refreshed from the YAML settings contract.
 
-## 20260503025500 — Terraform/OpenTofu formatting correction
+## 20260503030500 — Terraform/OpenTofu formatting correction
 
 - Corrects Terraform formatting in the EKS module call sites introduced by the endpoint CIDR hardening update.
-- Preserves the 20260503024500 OIDC, EKS endpoint CIDR, Karpenter IRSA, generated runtime tfvars, and Node.js 20-free workflow posture.
+- Preserves the 20260503030500 OIDC, EKS endpoint CIDR, Karpenter IRSA, generated runtime tfvars, and Node.js 20-free workflow posture.
 

@@ -16,10 +16,10 @@ apiVersion: stageplane.io/v1
 kind: StagectlReleaseManifest
 metadata:
   component: stagectl
-  version: "20260502060000"
+  version: "20260503030500"
 spec:
   source_repo: "stageplane/stagectl-releases"
-  release_tag: "v20260502060000"
+  release_tag: "v20260503030500"
   controller_source: "stageplane/stageplane-private-source-with-build-release"
   install_script: "https://raw.githubusercontent.com/stageplane/stagectl-releases/main/install.sh"
   local_shim: "bin/stagectl"
