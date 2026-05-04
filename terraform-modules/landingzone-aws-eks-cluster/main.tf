@@ -35,6 +35,7 @@ module "aws_eks_cluster" {
   cluster_version    = var.settings.cluster_version
   vpc_id             = var.vpc_id
   private_subnet_ids = var.private_subnet_ids
-  node_groups        = var.settings.compute.node_groups
-  common_tags        = local.common_tags
+  node_groups                         = var.settings.compute.node_groups
+  cluster_endpoint_public_access_cidrs = try(var.settings.cluster_endpoint_public_access_cidrs, var.cluster_endpoint_public_access_cidrs)
+  common_tags                         = local.common_tags
 }

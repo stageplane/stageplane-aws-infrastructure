@@ -34,6 +34,16 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "cluster_endpoint_public_access_cidrs" {
+  description = <<-EOT
+  Source CIDR allow-list for the public EKS API endpoint. The public baseline
+  exposes this as site configuration so operators can restrict access to VPN,
+  bastion, or corporate egress ranges instead of defaulting to the internet.
+  EOT
+  type        = list(string)
+  default     = ["203.0.113.0/24"]
+}
+
 variable "private_subnet_ids" {
   description = "Private subnet identifiers used by the cluster control plane and managed node groups."
   type        = list(string)

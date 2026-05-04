@@ -72,8 +72,9 @@ module "upstream_eks" {
   name               = var.cluster_name
   kubernetes_version = var.cluster_version
 
-  endpoint_public_access  = true
-  endpoint_private_access = true
+  endpoint_public_access       = true
+  endpoint_public_access_cidrs = var.cluster_endpoint_public_access_cidrs
+  endpoint_private_access      = true
 
   vpc_id     = var.vpc_id
   subnet_ids = var.private_subnet_ids

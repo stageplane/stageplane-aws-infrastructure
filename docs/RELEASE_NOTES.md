@@ -76,3 +76,10 @@ The example uses placeholder AWS role ARNs and state bucket names. It is intende
 - This avoids CI failures caused by unsafe temporary-directory cleanup in an external installer path while preserving architecture-neutral release distribution.
 - Restored GitHub Actions and release placeholder artifacts remain present.
 - GitHub Actions remain updated away from deprecated Node.js 20 action runtimes.
+
+## 20260503024500 — OIDC, EKS endpoint, and Karpenter IRSA hardening
+
+- `public-operations.yaml` now matches the documented OIDC posture by assuming `AWS_ROLE_TO_ASSUME` instead of consuming long-lived AWS access keys.
+- The EKS cluster module now exposes `cluster_endpoint_public_access_cidrs` so public endpoint access is explicitly restricted by site configuration.
+- Karpenter now supports an optional `compute.karpenter.irsa_role_arn` setting that annotates the controller service account for runtime node provisioning.
+- Generated runtime tfvars were refreshed from the YAML settings contract.

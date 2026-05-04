@@ -73,3 +73,11 @@ The added `stage_access.yaml` and shared profile contain placeholder AWS role AR
 - Preserved architecture-neutral stagectl release consumption while adding local OS/architecture asset download, checksum verification, cache reuse, and safe temporary-directory cleanup directly in the shim.
 - Preserved restored GitHub Actions workflows and release artifacts from the 20260502060000 baseline.
 - Kept GitHub Actions away from deprecated Node.js 20 action runtimes.
+
+## 20260503024500 — OIDC, EKS endpoint, and Karpenter IRSA hardening
+
+- Updated `public-operations.yaml` to use GitHub OIDC with `AWS_ROLE_TO_ASSUME` and `id-token: write`, removing the static `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` credential path.
+- Added `cluster_endpoint_public_access_cidrs` to the site settings contract and EKS Terraform module flow so the public API endpoint no longer relies on the upstream open-to-world default.
+- Added optional Karpenter controller IRSA role annotation wiring through `compute.karpenter.irsa_role_arn`.
+- Regenerated `deployments/site-default/config/generated/general_settings.runtime.tfvars.json` to preserve the full settings contract with the new endpoint CIDR and Karpenter IRSA fields.
+- Preserved restored workflows, architecture-neutral stagectl shim distribution, and Node.js 20-free GitHub Actions posture.
